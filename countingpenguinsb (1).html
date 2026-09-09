@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐧 Counting Penguins — Activity 2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0C2340;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: #0C2340;
+            color: #FFFFFF;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            opacity: 0.95;
+        }
+
+        .header .branding {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            opacity: 0.8;
+        }
+
+        .progress-pills {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: rgba(255, 214, 0, 0.2);
+            color: #FFFFFF;
+            border: 2px solid #FFD600;
+            transition: all 0.3s ease;
+        }
+
+        .pill.completed {
+            background: #FFD600;
+            color: #0C2340;
+            border-color: #FFD600;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: #0C2340;
+            border-bottom-color: #FFD600;
+            background: #FFFFFF;
+        }
+
+        .tab-btn:hover {
+            background: #FFFFFF;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .instruction {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #0C2340;
+            padding: 1rem;
+            background: #f0f8ff;
+            border-left: 4px solid #0C2340;
+            border-radius: 4px;
+        }
+
+        .grid-container {
+            position: relative;
+            display: inline-block;
+            margin: 2rem auto;
+        }
+
+        .helicopter {
+            position: absolute;
+            top: -2.5rem;
+            right: -0.5rem;
+            font-size: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 58px);
+            grid-template-rows: repeat(10, 58px);
+            gap: 2px;
+            background: #e0e0e0;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .row-label {
+            position: absolute;
+            left: -2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0C2340;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 58px;
+            width: 1.5rem;
+        }
+
+        .col-label {
+            position: absolute;
+            top: -1.8rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0C2340;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 1.5rem;
+        }
+
+        .grid-cell {
+            width: 58px;
+            height: 58px;
+            background: #FFFFFF;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .grid-cell:hover {
+            background: #f9f9f9;
+        }
+
+        .grid-cell.selected-convenience,
+        .grid-cell.selected-srs {
+            background: #FFD600;
+            border-color: #9a8000;
+        }
+
+        .grid-cell.selected-stratify-col {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .grid-cell.selected-stratify-row {
+            background: #FFD600;
+            border-color: #9a8000;
+        }
+
+        .grid-cell.selected-cluster {
+            background: #dcecff;
+            border-color: #0C2340;
+        }
+
+        .penguin {
+            position: absolute;
+            font-size: 1.25rem;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .count-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0C2340;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .grid-cell.selected .count-label {
+            opacity: 1;
+        }
+
+        .stratum-bg-odd {
+            background: #f0f8ff;
+        }
+
+        .stratum-bg-even {
+            background: #fffdf0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #0C2340;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #0a1a2e;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #0C2340;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .counter {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0C2340;
+        }
+
+        .number-input {
+            width: 80px;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 2px solid #0C2340;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .number-input::-webkit-outer-spin-button,
+        .number-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .number-input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #FFFFFF;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #0C2340;
+            color: #FFFFFF;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr.total-row {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        .estimate-box {
+            background: #FFD600;
+            color: #0C2340;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+
+        .estimate-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .note {
+            background: #f0f8ff;
+            color: #0C2340;
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-left: 4px solid #0C2340;
+        }
+
+        .footer {
+            background: #0C2340;
+            color: #FFFFFF;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .calculator-directions {
+            background: #fffdf0;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #FFD600;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0.5rem 0;
+        }
+
+        .calculator-directions strong {
+            color: #0C2340;
+        }
+
+        .submit-btn {
+            background: #0C2340;
+            color: #FFFFFF;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #0a1a2e;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                height: auto;
+            }
+
+            .content {
+                max-height: none;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .grid-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐧 Counting Penguins — Activity 2</h1>
+            <div class="subtitle">Does where the penguins live affect your estimate?</div>
+            <div class="branding">Steve's AP Stats Lab</div>
+            <div class="progress-pills">
+                <div class="pill" data-pill="convenience">Convenience</div>
+                <div class="pill" data-pill="srs">SRS</div>
+                <div class="pill" data-pill="stratify-col">Stratify by Column</div>
+                <div class="pill" data-pill="stratify-row">Stratify by Row</div>
+                <div class="pill" data-pill="cluster">Cluster</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="convenience">Convenience</button>
+            <button class="tab-btn" data-tab="srs">SRS</button>
+            <button class="tab-btn" data-tab="stratify-col">Stratify by Column</button>
+            <button class="tab-btn" data-tab="stratify-row">Stratify by Row</button>
+            <button class="tab-btn" data-tab="cluster">Cluster</button>
+            <button class="tab-btn" data-tab="results">Results</button>
+        </div>
+
+        <div class="content">
+            <!-- Convenience Tab -->
+            <div class="tab-pane active" data-tab-pane="convenience">
+                <div class="instruction">Pick up to 10 cells that are convenient to the helicopter landing spot.</div>
+                <div class="grid-container">
+                    <div class="helicopter">🚁</div>
+                    <div class="grid" id="grid-convenience"></div>
+                </div>
+                <div class="counter">Cells selected: <span id="convenience-count">0</span> / 10</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cell</th>
+                                <th>Penguin Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="convenience-table">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="convenience-estimate" style="display: none;">
+                    <div class="estimate-box">
+                        <div class="estimate-label">Your Estimate</div>
+                        <div id="convenience-estimate-value">0</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" id="convenience-reset">Reset</button>
+                </div>
+            </div>
+
+            <!-- SRS Tab -->
+            <div class="tab-pane" data-tab-pane="srs">
+                <div class="instruction">Use a random row and column for each of 10 unique cells. If you get a duplicate, re-roll.</div>
+                <div class="calculator-directions">
+                    <strong>TI-Nspire:</strong> Menu → 5: Probability → 4: Random → 2: Integer → randInt(1,10) for ROW, then again for COLUMN<br>
+                    <strong>NumWorks:</strong> Calculation app → randint(1,10) for ROW, then again for COLUMN
+                </div>
+                <div class="grid-container">
+                    <div class="grid" id="grid-srs"></div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="srs-generate">Generate Random Cell</button>
+                    <div class="counter">Cells selected: <span id="srs-count">0</span> / 10</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cell</th>
+                                <th>Penguin Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="srs-table">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="srs-estimate" style="display: none;">
+                    <div class="estimate-box">
+                        <div class="estimate-label">Your Estimate</div>
+                        <div id="srs-estimate-value">0</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" id="srs-reset">Reset</button>
+                </div>
+            </div>
+
+            <!-- Stratify by Column Tab -->
+            <div class="tab-pane" data-tab-pane="stratify-col">
+                <div class="instruction">There are 10 strata: one stratum per column. Use randInt(1,10) once per column to choose the ROW, then click that cell. A new choice in a column replaces the old one.</div>
+                <div class="grid-container">
+                    <div class="grid" id="grid-stratify-col"></div>
+                </div>
+                <div class="counter"><span id="stratify-col-count">0</span> of 10 columns sampled</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Stratum (Column #)</th>
+                                <th>Selection</th>
+                                <th>Penguin Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stratify-col-table">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="stratify-col-estimate" style="display: none;">
+                    <div class="estimate-box">
+                        <div class="estimate-label">Your Estimate</div>
+                        <div id="stratify-col-estimate-value">0</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" id="stratify-col-reset">Reset</button>
+                </div>
+            </div>
+
+            <!-- Stratify by Row Tab -->
+            <div class="tab-pane" data-tab-pane="stratify-row">
+                <div class="instruction">There are 10 strata: one stratum per row. Use randInt(1,10) once per row to choose the COLUMN, then click that cell. A new choice in a row replaces the old one.</div>
+                <div class="grid-container">
+                    <div class="grid" id="grid-stratify-row"></div>
+                </div>
+                <div class="counter"><span id="stratify-row-count">0</span> of 10 rows sampled</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Stratum (Row #)</th>
+                                <th>Selection</th>
+                                <th>Penguin Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stratify-row-table">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="stratify-row-estimate" style="display: none;">
+                    <div class="estimate-box">
+                        <div class="estimate-label">Your Estimate</div>
+                        <div id="stratify-row-estimate-value">0</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" id="stratify-row-reset">Reset</button>
+                </div>
+            </div>
+
+            <!-- Cluster Tab -->
+            <div class="tab-pane" data-tab-pane="cluster">
+                <div class="instruction">Each row is one cluster. Enter a row number from 1–10. All 10 cells in that row will be counted.</div>
+                <div class="controls">
+                    <label for="cluster-input" style="font-weight: 600; color: #0C2340;">Select Row:</label>
+                    <input type="number" id="cluster-input" class="number-input" min="1" max="10" placeholder="1–10">
+                </div>
+                <div class="grid-container">
+                    <div class="grid" id="grid-cluster"></div>
+                </div>
+                <div class="counter" id="cluster-status">Cluster selected: None</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cell</th>
+                                <th>Penguin Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cluster-table">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="cluster-estimate" style="display: none;">
+                    <div class="estimate-box">
+                        <div class="estimate-label">Your Estimate</div>
+                        <div id="cluster-estimate-value">0</div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" id="cluster-reset">Reset</button>
+                </div>
+            </div>
+
+            <!-- Results Tab -->
+            <div class="tab-pane" data-tab-pane="results">
+                <div class="instruction">Compare your estimates with the true total of 480 penguins. Notice how the two stratification methods compare!</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Your Estimate</th>
+                                <th>True Total (480)</th>
+                                <th>Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table">
+                            <tr>
+                                <td>Convenience</td>
+                                <td id="results-convenience">—</td>
+                                <td>480</td>
+                                <td id="results-convenience-diff">—</td>
+                            </tr>
+                            <tr>
+                                <td>SRS</td>
+                                <td id="results-srs">—</td>
+                                <td>480</td>
+                                <td id="results-srs-diff">—</td>
+                            </tr>
+                            <tr>
+                                <td>Stratify by Column</td>
+                                <td id="results-stratify-col">—</td>
+                                <td>480</td>
+                                <td id="results-stratify-col-diff">—</td>
+                            </tr>
+                            <tr>
+                                <td>Stratify by Row</td>
+                                <td id="results-stratify-row">—</td>
+                                <td>480</td>
+                                <td id="results-stratify-row-diff">—</td>
+                            </tr>
+                            <tr>
+                                <td>Cluster</td>
+                                <td id="results-cluster">—</td>
+                                <td>480</td>
+                                <td id="results-cluster-diff">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note">
+                    Compare your two stratified estimates. Stratifying by column cuts across the density gradient — each column spans sparse to dense rows. Stratifying by row runs parallel to the gradient — each row is internally uniform. Which approach gave a better estimate? Why does the direction of stratification matter?
+                </div>
+                <div class="controls">
+                    <button class="submit-btn" id="submit-results">Submit My Results</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 Steve's AP Stats Lab
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Grid data
+            const gridData = [
+                [2,2,2,2,2,2,2,2,2,4],
+                [2,2,2,2,2,2,2,2,2,4],
+                [3,3,3,3,3,3,3,3,3,5],
+                [3,3,3,3,3,3,3,3,3,5],
+                [4,4,4,4,4,4,4,4,4,6],
+                [4,4,4,4,4,4,4,4,4,6],
+                [6,6,6,6,6,6,6,6,6,8],
+                [6,6,6,6,6,6,6,6,6,8],
+                [8,8,8,8,8,8,8,8,8,9],
+                [8,8,8,8,8,8,8,8,8,9]
+            ];
+
+            // Verify total
+            const total = gridData.flat().reduce((s, v) => s + v, 0);
+            console.assert(total === 480, `Grid total is ${total}, expected 480`);
+
+            // Penguin positions cache
+            const penguinPositions = {};
+
+            function generatePenguinPositions(row, col) {
+                const key = `${row}-${col}`;
+                if (penguinPositions[key]) return penguinPositions[key];
+
+                const count = gridData[row][col];
+                const positions = [];
+                for (let i = 0; i < count; i++) {
+                    positions.push({
+                        x: Math.random() * 50,
+                        y: Math.random() * 50
+                    });
+                }
+                penguinPositions[key] = positions;
+                return positions;
+            }
+
+            function createGrid(containerId, mode) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+
+                // Add row labels
+                for (let r = 0; r < 10; r++) {
+                    const label = document.createElement('div');
+                    label.className = 'row-label';
+                    label.style.top = (r * 60 + 8) + 'px';
+                    label.textContent = r + 1;
+                    container.parentElement.appendChild(label);
+                }
+
+                // Add column labels
+                for (let c = 0; c < 10; c++) {
+                    const label = document.createElement('div');
+                    label.className = 'col-label';
+                    label.style.left = (c * 60 + 8) + 'px';
+                    label.textContent = c + 1;
+                    container.parentElement.appendChild(label);
+                }
+
+                // Create cells
+                for (let r = 0; r < 10; r++) {
+                    for (let c = 0; c < 10; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.setAttribute('data-action', 'cell');
+                        cell.setAttribute('data-mode', mode);
+                        cell.setAttribute('data-row', r);
+                        cell.setAttribute('data-col', c);
+
+                        // Add stratum background
+                        if (mode === 'stratify-col') {
+                            cell.classList.add(c % 2 === 0 ? 'stratum-bg-even' : 'stratum-bg-odd');
+                        } else if (mode === 'stratify-row') {
+                            cell.classList.add(r % 2 === 0 ? 'stratum-bg-even' : 'stratum-bg-odd');
+                        }
+
+                        const positions = generatePenguinPositions(r, c);
+                        positions.forEach(pos => {
+                            const penguin = document.createElement('span');
+                            penguin.className = 'penguin';
+                            penguin.textContent = '🐧';
+                            penguin.style.left = pos.x + '%';
+                            penguin.style.top = pos.y + '%';
+                            cell.appendChild(penguin);
+                        });
+
+                        const countLabel = document.createElement('div');
+                        countLabel.className = 'count-label';
+                        countLabel.textContent = gridData[r][c];
+                        cell.appendChild(countLabel);
+
+                        container.appendChild(cell);
+                    }
+                }
+            }
+
+            // State management
+            const state = {
+                convenience: new Set(),
+                srs: new Set(),
+                stratifyCol: new Map(),
+                stratifyRow: new Map(),
+                cluster: null,
+                estimates: {}
+            };
+
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tabName = e.target.getAttribute('data-tab');
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                    document.querySelector(`[data-tab-pane="${tabName}"]`).classList.add('active');
+
+                    // Initialize grids on first view
+                    if (tabName === 'convenience' && !document.getElementById('grid-convenience').children.length) {
+                        createGrid('grid-convenience', 'convenience');
+                        attachGridListeners('convenience');
+                    }
+                    if (tabName === 'srs' && !document.getElementById('grid-srs').children.length) {
+                        createGrid('grid-srs', 'srs');
+                        attachGridListeners('srs');
+                    }
+                    if (tabName === 'stratify-col' && !document.getElementById('grid-stratify-col').children.length) {
+                        createGrid('grid-stratify-col', 'stratify-col');
+                        attachGridListeners('stratify-col');
+                    }
+                    if (tabName === 'stratify-row' && !document.getElementById('grid-stratify-row').children.length) {
+                        createGrid('grid-stratify-row', 'stratify-row');
+                        attachGridListeners('stratify-row');
+                    }
+                    if (tabName === 'cluster' && !document.getElementById('grid-cluster').children.length) {
+                        createGrid('grid-cluster', 'cluster');
+                        attachGridListeners('cluster');
+                    }
+                });
+            });
+
+            function attachGridListeners(mode) {
+                const gridId = `grid-${mode === 'stratify-col' ? 'stratify-col' : mode === 'stratify-row' ? 'stratify-row' : mode === 'cluster' ? 'cluster' : mode}`;
+                const grid = document.getElementById(gridId);
+
+                grid.addEventListener('click', (e) => {
+                    const cell = e.target.closest('.grid-cell[data-action="cell"]');
+                    if (!cell) return;
+
+                    const row = parseInt(cell.getAttribute('data-row'));
+                    const col = parseInt(cell.getAttribute('data-col'));
+                    const key = `${row}-${col}`;
+
+                    if (mode === 'convenience') {
+                        if (state.convenience.has(key)) {
+                            state.convenience.delete(key);
+                            cell.classList.remove('selected-convenience');
+                        } else if (state.convenience.size < 10) {
+                            state.convenience.add(key);
+                            cell.classList.add('selected-convenience');
+                        }
+                        updateConvenience();
+                    } else if (mode === 'srs') {
+                        if (state.srs.has(key)) {
+                            state.srs.delete(key);
+                            cell.classList.remove('selected-srs');
+                        } else if (state.srs.size < 10) {
+                            state.srs.add(key);
+                            cell.classList.add('selected-srs');
+                        }
+                        updateSRS();
+                    } else if (mode === 'stratify-col') {
+                        const oldKey = state.stratifyCol.get(col);
+                        if (oldKey) {
+                            const [oldRow, oldCol] = oldKey.split('-').map(Number);
+                            const oldCell = grid.querySelector(`[data-row="${oldRow}"][data-col="${oldCol}"]`);
+                            if (oldCell) oldCell.classList.remove('selected-stratify-col');
+                        }
+                        state.stratifyCol.set(col, key);
+                        cell.classList.add('selected-stratify-col');
+                        updateStratifyCol();
+                    } else if (mode === 'stratify-row') {
+                        const oldKey = state.stratifyRow.get(row);
+                        if (oldKey) {
+                            const [oldRow, oldCol] = oldKey.split('-').map(Number);
+                            const oldCell = grid.querySelector(`[data-row="${oldRow}"][data-col="${oldCol}"]`);
+                            if (oldCell) oldCell.classList.remove('selected-stratify-row');
+                        }
+                        state.stratifyRow.set(row, key);
+                        cell.classList.add('selected-stratify-row');
+                        updateStratifyRow();
+                    } else if (mode === 'cluster') {
+                        // Cluster mode: clicking does nothing, only input controls selection
+                    }
+                });
+            }
+
+            function updateConvenience() {
+                document.getElementById('convenience-count').textContent = state.convenience.size;
+                const tbody = document.getElementById('convenience-table');
+                tbody.innerHTML = '';
+
+                let sum = 0;
+                const sorted = Array.from(state.convenience).sort();
+                sorted.forEach(key => {
+                    const [r, c] = key.split('-').map(Number);
+                    const count = gridData[r][c];
+                    sum += count;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>Row ${r + 1}, Col ${c + 1}</td><td>${count}</td>`;
+                    tbody.appendChild(tr);
+                });
+
+                if (state.convenience.size === 10) {
+                    const estimate = Math.round((sum / 10) * 100);
+                    state.estimates.convenience = estimate;
+                    document.getElementById('convenience-estimate').style.display = 'block';
+                    document.getElementById('convenience-estimate-value').textContent = estimate;
+                    document.querySelector('[data-pill="convenience"]').classList.add('completed');
+                    updateResults();
+                } else {
+                    document.getElementById('convenience-estimate').style.display = 'none';
+                    document.querySelector('[data-pill="convenience"]').classList.remove('completed');
+                }
+            }
+
+            function updateSRS() {
+                document.getElementById('srs-count').textContent = state.srs.size;
+                const tbody = document.getElementById('srs-table');
+                tbody.innerHTML = '';
+
+                let sum = 0;
+                const sorted = Array.from(state.srs).sort();
+                sorted.forEach(key => {
+                    const [r, c] = key.split('-').map(Number);
+                    const count = gridData[r][c];
+                    sum += count;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>Row ${r + 1}, Col ${c + 1}</td><td>${count}</td>`;
+                    tbody.appendChild(tr);
+                });
+
+                if (state.srs.size === 10) {
+                    const estimate = Math.round((sum / 10) * 100);
+                    state.estimates.srs = estimate;
+                    document.getElementById('srs-estimate').style.display = 'block';
+                    document.getElementById('srs-estimate-value').textContent = estimate;
+                    document.querySelector('[data-pill="srs"]').classList.add('completed');
+                    updateResults();
+                } else {
+                    document.getElementById('srs-estimate').style.display = 'none';
+                    document.querySelector('[data-pill="srs"]').classList.remove('completed');
+                }
+            }
+
+            function updateStratifyCol() {
+                document.getElementById('stratify-col-count').textContent = state.stratifyCol.size;
+                const tbody = document.getElementById('stratify-col-table');
+                tbody.innerHTML = '';
+
+                let sum = 0;
+                for (let col = 0; col < 10; col++) {
+                    const key = state.stratifyCol.get(col);
+                    const tr = document.createElement('tr');
+                    if (key) {
+                        const [r, c] = key.split('-').map(Number);
+                        const count = gridData[r][c];
+                        sum += count;
+                        tr.innerHTML = `<td>${col + 1}</td><td>Row ${r + 1}, Col ${c + 1}</td><td>${count}</td>`;
+                    } else {
+                        tr.innerHTML = `<td>${col + 1}</td><td>—</td><td>—</td>`;
+                    }
+                    tbody.appendChild(tr);
+                }
+
+                if (state.stratifyCol.size === 10) {
+                    const estimate = Math.round((sum / 10) * 100);
+                    state.estimates.stratifyCol = estimate;
+                    document.getElementById('stratify-col-estimate').style.display = 'block';
+                    document.getElementById('stratify-col-estimate-value').textContent = estimate;
+                    document.querySelector('[data-pill="stratify-col"]').classList.add('completed');
+                    updateResults();
+                } else {
+                    document.getElementById('stratify-col-estimate').style.display = 'none';
+                    document.querySelector('[data-pill="stratify-col"]').classList.remove('completed');
+                }
+            }
+
+            function updateStratifyRow() {
+                document.getElementById('stratify-row-count').textContent = state.stratifyRow.size;
+                const tbody = document.getElementById('stratify-row-table');
+                tbody.innerHTML = '';
+
+                let sum = 0;
+                for (let row = 0; row < 10; row++) {
+                    const key = state.stratifyRow.get(row);
+                    const tr = document.createElement('tr');
+                    if (key) {
+                        const [r, c] = key.split('-').map(Number);
+                        const count = gridData[r][c];
+                        sum += count;
+                        tr.innerHTML = `<td>${row + 1}</td><td>Row ${r + 1}, Col ${c + 1}</td><td>${count}</td>`;
+                    } else {
+                        tr.innerHTML = `<td>${row + 1}</td><td>—</td><td>—</td>`;
+                    }
+                    tbody.appendChild(tr);
+                }
+
+                if (state.stratifyRow.size === 10) {
+                    const estimate = Math.round((sum / 10) * 100);
+                    state.estimates.stratifyRow = estimate;
+                    document.getElementById('stratify-row-estimate').style.display = 'block';
+                    document.getElementById('stratify-row-estimate-value').textContent = estimate;
+                    document.querySelector('[data-pill="stratify-row"]').classList.add('completed');
+                    updateResults();
+                } else {
+                    document.getElementById('stratify-row-estimate').style.display = 'none';
+                    document.querySelector('[data-pill="stratify-row"]').classList.remove('completed');
+                }
+            }
+
+            function updateCluster() {
+                const row = state.cluster;
+                const tbody = document.getElementById('cluster-table');
+                tbody.innerHTML = '';
+
+                if (row === null) {
+                    document.getElementById('cluster-status').textContent = 'Cluster selected: None';
+                    document.getElementById('cluster-estimate').style.display = 'none';
+                } else {
+                    document.getElementById('cluster-status').textContent = `Cluster selected: Row ${row + 1}`;
+                    let sum = 0;
+                    for (let c = 0; c < 10; c++) {
+                        const count = gridData[row][c];
+                        sum += count;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>Row ${row + 1}, Col ${c + 1}</td><td>${count}</td>`;
+                        tbody.appendChild(tr);
+                    }
+                    const totalTr = document.createElement('tr');
+                    totalTr.classList.add('total-row');
+                    totalTr.innerHTML = `<td>Row Total</td><td>${sum}</td>`;
+                    tbody.appendChild(totalTr);
+
+                    const estimate = sum * 10;
+                    state.estimates.cluster = estimate;
+                    document.getElementById('cluster-estimate').style.display = 'block';
+                    document.getElementById('cluster-estimate-value').textContent = estimate;
+                    document.querySelector('[data-pill="cluster"]').classList.add('completed');
+                    updateResults();
+                }
+            }
+
+            function updateResults() {
+                const estimates = state.estimates;
+                const methods = ['convenience', 'srs', 'stratifyCol', 'stratifyRow', 'cluster'];
+                const displayNames = ['convenience', 'srs', 'stratify-col', 'stratify-row', 'cluster'];
+
+                methods.forEach((method, idx) => {
+                    const displayName = displayNames[idx];
+                    const est = estimates[method];
+                    const estElem = document.getElementById(`results-${displayName}`);
+                    const diffElem = document.getElementById(`results-${displayName}-diff`);
+
+                    if (est !== undefined) {
+                        estElem.textContent = est;
+                        const diff = Math.abs(est - 480);
+                        diffElem.textContent = diff;
+                    } else {
+                        estElem.textContent = '—';
+                        diffElem.textContent = '—';
+                    }
+                });
+            }
+
+            // Button listeners
+            document.getElementById('convenience-reset').addEventListener('click', () => {
+                state.convenience.clear();
+                document.querySelectorAll('#grid-convenience .grid-cell').forEach(cell => {
+                    cell.classList.remove('selected-convenience');
+                });
+                updateConvenience();
+            });
+
+            document.getElementById('srs-reset').addEventListener('click', () => {
+                state.srs.clear();
+                document.querySelectorAll('#grid-srs .grid-cell').forEach(cell => {
+                    cell.classList.remove('selected-srs');
+                });
+                updateSRS();
+            });
+
+            document.getElementById('srs-generate').addEventListener('click', () => {
+                if (state.srs.size >= 10) return;
+
+                let row, col, key;
+                do {
+                    row = Math.floor(Math.random() * 10);
+                    col = Math.floor(Math.random() * 10);
+                    key = `${row}-${col}`;
+                } while (state.srs.has(key));
+
+                state.srs.add(key);
+                const cell = document.querySelector(`#grid-srs [data-row="${row}"][data-col="${col}"]`);
+                if (cell) cell.classList.add('selected-srs');
+                updateSRS();
+            });
+
+            document.getElementById('stratify-col-reset').addEventListener('click', () => {
+                state.stratifyCol.clear();
+                document.querySelectorAll('#grid-stratify-col .grid-cell').forEach(cell => {
+                    cell.classList.remove('selected-stratify-col');
+                });
+                updateStratifyCol();
+            });
+
+            document.getElementById('stratify-row-reset').addEventListener('click', () => {
+                state.stratifyRow.clear();
+                document.querySelectorAll('#grid-stratify-row .grid-cell').forEach(cell => {
+                    cell.classList.remove('selected-stratify-row');
+                });
+                updateStratifyRow();
+            });
+
+            document.getElementById('cluster-input').addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === '') {
+                    state.cluster = null;
+                    document.querySelectorAll('#grid-cluster .grid-cell').forEach(cell => {
+                        cell.classList.remove('selected-cluster');
+                    });
+                } else {
+                    const row = parseInt(val) - 1;
+                    if (row >= 0 && row < 10) {
+                        state.cluster = row;
+                        document.querySelectorAll('#grid-cluster .grid-cell').forEach(cell => {
+                            cell.classList.remove('selected-cluster');
+                        });
+                        for (let c = 0; c < 10; c++) {
+                            const cell = document.querySelector(`#grid-cluster [data-row="${row}"][data-col="${c}"]`);
+                            if (cell) cell.classList.add('selected-cluster');
+                        }
+                    }
+                }
+                updateCluster();
+            });
+
+            document.getElementById('cluster-input').addEventListener('wheel', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+
+            document.getElementById('cluster-reset').addEventListener('click', () => {
+                document.getElementById('cluster-input').value = '';
+                state.cluster = null;
+                document.querySelectorAll('#grid-cluster .grid-cell').forEach(cell => {
+                    cell.classList.remove('selected-cluster');
+                });
+                updateCluster();
+            });
+
+            document.getElementById('submit-results').addEventListener('click', () => {
+                window.open('https://docs.google.com/forms/d/16R_H5WLvD6CT1Ou5Dqz9EVKNNMFezyhN68K9eq5rG_U/preview', '_blank');
+            });
+
+            // Initialize first grid
+            createGrid('grid-convenience', 'convenience');
+            attachGridListeners('convenience');
+        });
+    </script>
+</body>
+</html>
