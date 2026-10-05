@@ -1,0 +1,545 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two-Way Table Builder | Steve's AP Stats Lab</title>
+<style>
+:root {
+  --navy: #0C2340;
+  --gold: #FFD600;
+  --white: #FFFFFF;
+  --ink: #172333;
+  --muted: #5f6f82;
+  --line: #dce3ea;
+  --green: #16834b;
+  --red: #b42318;
+  --yellow-bg: #fff8c7;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: #f5f7fa; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.5; }
+header { background: var(--navy); color: var(--white); padding: 1rem 1.25rem; }
+.brand { color: var(--gold); font-weight: 800; font-size: 1.35rem; letter-spacing: .02em; }
+.subtitle { color: #dce6f2; margin-top: .15rem; }
+main { width: min(1120px, calc(100% - 2rem)); margin: 1.5rem auto 2rem; }
+.card { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 1.25rem; box-shadow: 0 7px 22px rgba(12,35,64,.07); margin-bottom: 1rem; }
+h1, h2, h3 { color: var(--navy); margin-top: 0; }
+h1 { font-size: clamp(1.55rem, 3vw, 2.2rem); }
+h2 { font-size: 1.35rem; }
+.lead { color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.scenario-card { border: 2px solid var(--line); border-radius: 14px; padding: 1rem; cursor: pointer; transition: .2s; }
+.scenario-card:hover, .scenario-card.selected { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,214,0,.2); }
+.scenario-card h3 { margin-bottom: .35rem; font-size: 1.05rem; }
+.context { color: var(--muted); font-size: .93rem; }
+label { display: block; font-weight: 700; margin: .7rem 0 .3rem; }
+input, select { width: 100%; border: 1px solid #b9c6d3; border-radius: 9px; padding: .65rem .7rem; font: inherit; color: var(--ink); background: var(--white); }
+input:focus, select:focus { outline: 3px solid rgba(255,214,0,.45); border-color: var(--navy); }
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+button { border: 0; border-radius: 9px; padding: .7rem 1rem; font: inherit; font-weight: 800; cursor: pointer; transition: .15s; }
+button:hover { transform: translateY(-1px); }
+.primary { background: var(--gold); color: var(--navy); }
+.secondary { background: var(--navy); color: var(--white); }
+.ghost { background: #e9eef4; color: var(--navy); }
+.actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
+.notice { padding: .75rem .9rem; border-radius: 10px; background: #edf4fb; border-left: 4px solid var(--navy); margin: .8rem 0; }
+.error { color: var(--red); font-weight: 700; margin-top: .65rem; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 560px; margin-top: .6rem; }
+th, td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: .75rem; text-align: center; }
+th:first-child, td:first-child { border-left: 1px solid var(--line); }
+thead th { border-top: 1px solid var(--line); background: var(--navy); color: var(--white); }
+thead th:first-child { border-top-left-radius: 9px; }
+thead th:last-child { border-top-right-radius: 9px; }
+tbody tr:last-child th:first-child { border-bottom-left-radius: 9px; }
+tbody tr:last-child td:last-child { border-bottom-right-radius: 9px; }
+.total { background: var(--yellow-bg); color: var(--navy); font-weight: 800; }
+.cell { background: #fff; font-weight: 650; }
+.small-table { margin-bottom: 1rem; }
+.small-table table { min-width: 0; font-size: .9rem; }
+.builder-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; align-items: end; }
+.builder-grid { overflow-x: auto; padding-bottom: .5rem; }
+.cell-grid { display: grid; gap: .55rem; min-width: 520px; align-items: center; }
+.grid-corner, .grid-header, .grid-row-label { font-weight: 800; color: var(--navy); background: #edf4fb; border-radius: 8px; padding: .55rem; }
+.grid-header { text-align: center; }
+.grid-row-label { white-space: nowrap; }
+.cell-grid input { min-width: 0; text-align: center; }
+.progress { display: flex; justify-content: space-between; align-items: center; gap: 1rem; color: var(--muted); font-weight: 800; margin-bottom: .8rem; }
+.progress-bar { height: 9px; background: #e7edf3; border-radius: 99px; overflow: hidden; flex: 1; }
+.progress-fill { height: 100%; background: var(--gold); }
+.question { font-size: 1.15rem; font-weight: 750; margin: 1rem 0; }
+.feedback { margin-top: 1rem; padding: 1rem; border-radius: 11px; font-weight: 700; }
+.feedback.correct { color: var(--green); background: #e8f7ef; border: 1px solid #a9e2c1; }
+.feedback.incorrect { color: var(--red); background: #fff0ee; border: 1px solid #f2b8b1; }
+.solution { margin-top: .65rem; color: var(--ink); font-weight: 500; }
+.score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.score-item { padding: 1rem; border-radius: 12px; text-align: center; font-weight: 800; border: 2px solid var(--line); }
+.score-item.perfect { background: #e8f7ef; border-color: #8bd1aa; }
+.score-item.good { background: var(--yellow-bg); border-color: #f0d34b; }
+.score-item.low { background: #fff0ee; border-color: #eeaaa2; }
+footer { background: var(--navy); color: var(--white); text-align: center; padding: .8rem; font-size: .82rem; }
+@media (max-width: 600px) {
+  main { width: min(100% - 1rem, 1120px); margin-top: 1rem; }
+  .card { padding: 1rem; border-radius: 12px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Steve's AP Stats Lab</div>
+  <div class="subtitle">Two-Way Table Builder</div>
+</header>
+<main id="app"></main>
+<footer>© Steve's AP Stats Lab | stevesapstatslab.com</footer>
+<script>
+'use strict';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const SCENARIOS = [
+    {
+      name: 'Grade Level × Lunch Preference',
+      variable1: 'Grade Level',
+      variable2: 'Lunch Preference',
+      rows: ['Juniors', 'Seniors'],
+      cols: ['Pizza', 'Salad', 'Sandwich'],
+      cells: [[28, 14, 18], [22, 24, 14]],
+      context: 'A survey of 120 high school students asked about their grade level and lunch preference.'
+    },
+    {
+      name: 'Gender × Social Media Platform',
+      variable1: 'Gender',
+      variable2: 'Social Media Platform',
+      rows: ['Male', 'Female'],
+      cols: ['TikTok', 'Instagram', 'YouTube'],
+      cells: [[18, 22, 20], [27, 19, 14]],
+      context: 'A survey of 120 students asked about their gender and preferred social media platform.'
+    },
+    {
+      name: 'Grade × Extracurricular Activity',
+      variable1: 'Grade',
+      variable2: 'Extracurricular Activity',
+      rows: ['Soph', 'Junior', 'Senior'],
+      cols: ['Sports', 'Arts', 'Clubs'],
+      cells: [[22, 14, 9], [18, 17, 15], [15, 12, 18]],
+      context: 'A survey of 140 high school students asked about their grade and primary extracurricular activity.'
+    },
+    {
+      name: 'Pet Ownership × Housing Type',
+      variable1: 'Pet Ownership',
+      variable2: 'Housing Type',
+      rows: ['Dog Owner', 'Cat Owner', 'No Pet'],
+      cols: ['House', 'Apartment'],
+      cells: [[42, 18], [21, 29], [17, 23]],
+      context: 'A survey of 150 residents asked about their pet ownership and housing type.'
+    },
+    {
+      name: 'Exercise Frequency × Sleep Quality',
+      variable1: 'Exercise Frequency',
+      variable2: 'Sleep Quality',
+      rows: ['Daily', 'Sometimes', 'Rarely'],
+      cols: ['Good Sleep', 'Poor Sleep'],
+      cells: [[45, 15], [30, 30], [10, 40]],
+      context: 'A health survey of 170 adults asked about their exercise frequency and sleep quality.'
+    },
+    {
+      name: 'Transportation × Arrival Time',
+      variable1: 'Transportation',
+      variable2: 'Arrival Time',
+      rows: ['Bus', 'Car', 'Walk'],
+      cols: ['On Time', 'Late'],
+      cells: [[38, 12], [52, 8], [18, 12]],
+      context: 'A survey of 140 students asked about their primary mode of transportation and whether they typically arrive on time or late.'
+    }
+  ];
+
+  const STATE = {
+    mode: null,
+    selectedScenario: 0,
+    tableData: null,
+    builderDimensions: { rows: 2, cols: 2 },
+    currentQuestion: 0,
+    questions: [],
+    answersGiven: [],
+    scores: {},
+    submitted: false,
+    builderError: ''
+  };
+
+  const app = document.getElementById('app');
+  const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[character]));
+  const rounded = (value) => Number(Number(value).toFixed(4));
+  const formatted = (value) => Number(value).toFixed(4);
+
+  function resetState() {
+    STATE.mode = null;
+    STATE.selectedScenario = 0;
+    STATE.tableData = null;
+    STATE.builderDimensions = { rows: 2, cols: 2 };
+    STATE.currentQuestion = 0;
+    STATE.questions = [];
+    STATE.answersGiven = [];
+    STATE.scores = {};
+    STATE.submitted = false;
+    STATE.builderError = '';
+  }
+
+  function calculateTable(variable1, variable2, rows, cols, cells, context = '') {
+    const rowTotals = cells.map((row) => row.reduce((sum, value) => sum + value, 0));
+    const colTotals = cols.map((unused, columnIndex) => cells.reduce((sum, row) => sum + row[columnIndex], 0));
+    const grandTotal = rowTotals.reduce((sum, value) => sum + value, 0);
+    return { variable1, variable2, rows, cols, cells, rowTotals, colTotals, grandTotal, context };
+  }
+
+  function renderTable(data, compact = false) {
+    const headerCells = data.cols.map((column) => `<th>${escapeHtml(column)}</th>`).join('');
+    const bodyRows = data.rows.map((row, rowIndex) => {
+      const cells = data.cells[rowIndex].map((cell) => `<td class="cell">${cell}</td>`).join('');
+      return `<tr><th>${escapeHtml(row)}</th>${cells}<td class="total">${data.rowTotals[rowIndex]}</td></tr>`;
+    }).join('');
+    const columnTotals = data.colTotals.map((total) => `<td class="total">${total}</td>`).join('');
+    return `<div class="table-wrap ${compact ? 'small-table' : ''}">
+      <table aria-label="Two-way table">
+        <thead><tr><th rowspan="2">${escapeHtml(data.variable1)} \\ ${escapeHtml(data.variable2)}</th><th colspan="${data.cols.length}">${escapeHtml(data.variable2)}</th><th class="total" rowspan="2">Row Total</th></tr><tr>${headerCells}</tr></thead>
+        <tbody>${bodyRows}<tr><th class="total">Column Total</th>${columnTotals}<td class="total">${data.grandTotal}</td></tr></tbody>
+      </table>
+    </div>`;
+  }
+
+  function renderStart() {
+    app.innerHTML = `<section class="card">
+      <h1>Two-Way Table Builder</h1>
+      <p class="lead">Practice marginal, conditional, addition-rule, complement, multiplication-rule, and independence probabilities using real table values.</p>
+      <div class="grid">
+        <div class="scenario-card ${STATE.mode === 'scenario' ? 'selected' : ''}" data-action="choose-mode" data-mode="scenario"><h3>Mode A: Give Me a Scenario</h3><p>Choose from six ready-to-use tables and begin practicing.</p></div>
+        <div class="scenario-card ${STATE.mode === 'build' ? 'selected' : ''}" data-action="choose-mode" data-mode="build"><h3>Mode B: Build My Own</h3><p>Enter any table from 2 × 2 through 8 × 8.</p></div>
+      </div>
+    </section>
+    ${STATE.mode === 'scenario' ? renderScenarioPicker() : ''}
+    ${STATE.mode === 'build' ? renderBuilder() : ''}`;
+  }
+
+  function renderScenarioPicker() {
+    const scenario = SCENARIOS[STATE.selectedScenario];
+    const data = calculateTable(scenario.variable1, scenario.variable2, scenario.rows, scenario.cols, scenario.cells, scenario.context);
+    return `<section class="card">
+      <h2>Choose a scenario</h2>
+      <div class="grid">${SCENARIOS.map((item, index) => `<div class="scenario-card ${index === STATE.selectedScenario ? 'selected' : ''}" data-action="select-scenario" data-index="${index}"><h3>Scenario ${index + 1}: ${escapeHtml(item.name)}</h3><p class="context">${escapeHtml(item.context)}</p></div>`).join('')}</div>
+      <div class="notice"><strong>Selected:</strong> ${escapeHtml(scenario.name)}<br>${escapeHtml(scenario.context)}</div>
+      ${renderTable(data, true)}
+      <div class="actions"><button type="button" class="primary" data-action="start-scenario">Start Questions</button><button type="button" class="ghost" data-action="choose-mode" data-mode="null">Back</button></div>
+    </section>`;
+  }
+
+  function builderDefaults() {
+    const rows = STATE.builderDimensions.rows;
+    const cols = STATE.builderDimensions.cols;
+    const rowLabels = Array.from({ length: rows }, (_, index) => `Row ${index + 1}`);
+    const colLabels = Array.from({ length: cols }, (_, index) => `Col ${index + 1}`);
+    const cells = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
+    return { rowLabels, colLabels, cells };
+  }
+
+  function renderBuilder() {
+    const { rows, cols } = STATE.builderDimensions;
+    const defaults = builderDefaults();
+    const columnTemplate = `180px repeat(${cols}, minmax(95px, 1fr))`;
+    const headers = defaults.colLabels.map((label, columnIndex) => `<div class="grid-header"><input type="text" id="col-label-${columnIndex}" aria-label="Column category ${columnIndex + 1}" placeholder="${escapeHtml(label)}"></div>`).join('');
+    const gridRows = defaults.rowLabels.map((label, rowIndex) => {
+      const inputs = defaults.cells[rowIndex].map((value, columnIndex) => `<input type="number" min="1" step="1" id="cell-${rowIndex}-${columnIndex}" aria-label="Cell row ${rowIndex + 1}, column ${columnIndex + 1}" placeholder="Count">`).join('');
+      return `<div class="grid-row-label"><input type="text" id="row-label-${rowIndex}" aria-label="Row category ${rowIndex + 1}" placeholder="${escapeHtml(label)}"></div>${inputs}`;
+    }).join('');
+    return `<section class="card">
+      <h2>Build your own two-way table</h2>
+      <p class="lead">Choose dimensions from 2 through 8, label every category, and enter a positive integer in every cell.</p>
+      <div class="builder-controls">
+        <div><label for="row-count">Number of row categories</label><input id="row-count" type="number" min="2" max="8" step="1" value="${rows}"></div>
+        <div><label for="col-count">Number of column categories</label><input id="col-count" type="number" min="2" max="8" step="1" value="${cols}"></div>
+        <div><button type="button" class="secondary" data-action="update-table">Update Table</button></div>
+      </div>
+      <div class="grid">
+        <div><label for="variable1">Variable 1 (rows)</label><input id="variable1" type="text" placeholder="For example: Grade Level"></div>
+        <div><label for="variable2">Variable 2 (columns)</label><input id="variable2" type="text" placeholder="For example: Lunch Preference"></div>
+      </div>
+      <h3>Labels and cell values</h3>
+      <div class="builder-grid"><div class="cell-grid" style="grid-template-columns: ${columnTemplate};"><div class="grid-corner">Rows \\ Columns</div>${headers}${gridRows}</div></div>
+      <div class="error" role="alert">${escapeHtml(STATE.builderError)}</div>
+      <div class="actions"><button type="button" class="primary" data-action="build-start">Build Table &amp; Start Questions</button><button type="button" class="ghost" data-action="choose-mode" data-mode="null">Back</button></div>
+    </section>`;
+  }
+
+  function getValue(id) {
+    const element = document.getElementById(id);
+    return element ? element.value.trim() : '';
+  }
+
+  function readBuilder() {
+    const rowCount = Number(getValue('row-count'));
+    const colCount = Number(getValue('col-count'));
+    if (!Number.isInteger(rowCount) || rowCount < 2 || rowCount > 8 || !Number.isInteger(colCount) || colCount < 2 || colCount > 8) {
+      return { error: 'Choose between 2 and 8 row categories and between 2 and 8 column categories.' };
+    }
+    const variable1 = getValue('variable1');
+    const variable2 = getValue('variable2');
+    const rows = Array.from({ length: rowCount }, (_, index) => getValue(`row-label-${index}`));
+    const cols = Array.from({ length: colCount }, (_, index) => getValue(`col-label-${index}`));
+    const cells = Array.from({ length: rowCount }, (_, rowIndex) => Array.from({ length: colCount }, (_, columnIndex) => Number(getValue(`cell-${rowIndex}-${columnIndex}`))));
+    if (!variable1 || !variable2 || rows.some((label) => !label) || cols.some((label) => !label)) {
+      return { error: 'Fill in both variable names and every row and column label.' };
+    }
+    if (cells.some((row) => row.some((value) => !Number.isInteger(value) || value <= 0))) {
+      return { error: 'Every cell must be a positive integer.' };
+    }
+    return { data: calculateTable(variable1, variable2, rows, cols, cells) };
+  }
+
+  function parseProbability(value) {
+    const text = String(value).trim();
+    if (text.includes('/')) {
+      const parts = text.split('/');
+      if (parts.length !== 2) return NaN;
+      const numerator = Number(parts[0].trim());
+      const denominator = Number(parts[1].trim());
+      return Number.isFinite(numerator) && Number.isFinite(denominator) && denominator !== 0 ? numerator / denominator : NaN;
+    }
+    return Number(text);
+  }
+
+  function buildQuestions(data) {
+    const questions = [];
+    const n = data.grandTotal;
+    const rowTotal = (index) => data.rowTotals[index];
+    const colTotal = (index) => data.colTotals[index];
+    const cell = (rowIndex, columnIndex) => data.cells[rowIndex][columnIndex];
+    const addNumeric = (type, prompt, answer, solution) => questions.push({ type, prompt, answer: rounded(answer), solution });
+
+    data.rows.forEach((row, rowIndex) => addNumeric('marginal', `What is P(${row})?`, rowTotal(rowIndex) / n, `P(${row}) = ${rowTotal(rowIndex)} / ${n} = ${formatted(rowTotal(rowIndex) / n)}`));
+    data.cols.forEach((column, columnIndex) => addNumeric('marginal', `What is P(${column})?`, colTotal(columnIndex) / n, `P(${column}) = ${colTotal(columnIndex)} / ${n} = ${formatted(colTotal(columnIndex) / n)}`));
+
+    data.rows.forEach((row, rowIndex) => {
+      const columnIndex = rowIndex % data.cols.length;
+      addNumeric('conditional', `What is P(${data.cols[columnIndex]} | ${row})?`, cell(rowIndex, columnIndex) / rowTotal(rowIndex), `P(${data.cols[columnIndex]} | ${row}) = ${cell(rowIndex, columnIndex)} / ${rowTotal(rowIndex)} = ${formatted(cell(rowIndex, columnIndex) / rowTotal(rowIndex))}`);
+    });
+    data.cols.forEach((column, columnIndex) => {
+      const rowIndex = columnIndex % data.rows.length;
+      addNumeric('conditional', `What is P(${data.rows[rowIndex]} | ${column})?`, cell(rowIndex, columnIndex) / colTotal(columnIndex), `P(${data.rows[rowIndex]} | ${column}) = ${cell(rowIndex, columnIndex)} / ${colTotal(columnIndex)} = ${formatted(cell(rowIndex, columnIndex) / colTotal(columnIndex))}`);
+    });
+
+    // Non-mutually-exclusive addition rule: a row OR a column overlaps in one cell.
+    const additionCount = Math.min(4, Math.max(2, data.rows.length));
+    for (let rowIndex = 0; rowIndex < additionCount; rowIndex += 1) {
+      const columnIndex = rowIndex % data.cols.length;
+      const answer = (rowTotal(rowIndex) + colTotal(columnIndex) - cell(rowIndex, columnIndex)) / n;
+      addNumeric('addition', `What is P(${data.rows[rowIndex]} OR ${data.cols[columnIndex]})?`, answer, `P(A or B) = P(A) + P(B) − P(A and B) = ${rowTotal(rowIndex)}/${n} + ${colTotal(columnIndex)}/${n} − ${cell(rowIndex, columnIndex)}/${n} = ${formatted(answer)}`);
+    }
+
+    // Mutually-exclusive addition rule: two row categories cannot overlap.
+    const rowPairAnswer01 = (rowTotal(0) + rowTotal(1)) / n;
+    addNumeric(
+      'addition',
+      `What is P(${data.rows[0]} OR ${data.rows[1]})?`,
+      rowPairAnswer01,
+      `Since a randomly selected person can only belong to one ${data.variable1} category, these events are mutually exclusive — P(${data.rows[0]} AND ${data.rows[1]}) = 0. Therefore, P(${data.rows[0]} OR ${data.rows[1]}) = P(${data.rows[0]}) + P(${data.rows[1]}) = ${rowTotal(0)}/${n} + ${rowTotal(1)}/${n} = ${formatted(rowPairAnswer01)}`
+    );
+    if (data.rows.length >= 3) {
+      const rowPairAnswer02 = (rowTotal(0) + rowTotal(2)) / n;
+      addNumeric(
+        'addition',
+        `What is P(${data.rows[0]} OR ${data.rows[2]})?`,
+        rowPairAnswer02,
+        `Since a randomly selected person can only belong to one ${data.variable1} category, these events are mutually exclusive — P(${data.rows[0]} AND ${data.rows[2]}) = 0. Therefore, P(${data.rows[0]} OR ${data.rows[2]}) = P(${data.rows[0]}) + P(${data.rows[2]}) = ${rowTotal(0)}/${n} + ${rowTotal(2)}/${n} = ${formatted(rowPairAnswer02)}`
+      );
+    }
+
+    // Mutually-exclusive addition rule: two column categories cannot overlap.
+    const colPairAnswer01 = (colTotal(0) + colTotal(1)) / n;
+    addNumeric(
+      'addition',
+      `What is P(${data.cols[0]} OR ${data.cols[1]})?`,
+      colPairAnswer01,
+      `Since a randomly selected person can only belong to one ${data.variable2} category, these events are mutually exclusive — P(${data.cols[0]} AND ${data.cols[1]}) = 0. Therefore, P(${data.cols[0]} OR ${data.cols[1]}) = P(${data.cols[0]}) + P(${data.cols[1]}) = ${colTotal(0)}/${n} + ${colTotal(1)}/${n} = ${formatted(colPairAnswer01)}`
+    );
+    if (data.cols.length >= 3) {
+      const colPairAnswer02 = (colTotal(0) + colTotal(2)) / n;
+      addNumeric(
+        'addition',
+        `What is P(${data.cols[0]} OR ${data.cols[2]})?`,
+        colPairAnswer02,
+        `Since a randomly selected person can only belong to one ${data.variable2} category, these events are mutually exclusive — P(${data.cols[0]} AND ${data.cols[2]}) = 0. Therefore, P(${data.cols[0]} OR ${data.cols[2]}) = P(${data.cols[0]}) + P(${data.cols[2]}) = ${colTotal(0)}/${n} + ${colTotal(2)}/${n} = ${formatted(colPairAnswer02)}`
+      );
+    }
+
+    const complementRow = 1 - rowTotal(0) / n;
+    const complementCol = 1 - colTotal(0) / n;
+    addNumeric('complement', `What is P(NOT ${data.rows[0]})?`, complementRow, `P(NOT ${data.rows[0]}) = 1 − P(${data.rows[0]}) = 1 − ${rowTotal(0)}/${n} = ${formatted(complementRow)}`);
+    addNumeric('complement', `What is P(NOT ${data.cols[0]})?`, complementCol, `P(NOT ${data.cols[0]}) = 1 − P(${data.cols[0]}) = 1 − ${colTotal(0)}/${n} = ${formatted(complementCol)}`);
+
+    const withReplacement0 = (rowTotal(0) / n) * (rowTotal(0) / n);
+    const withReplacement1 = (rowTotal(1) / n) * (rowTotal(1) / n);
+    addNumeric('multiplication', `With replacement, what is P(both selections are ${data.rows[0]})?`, withReplacement0, `P(${data.rows[0]}) × P(${data.rows[0]}) = ${rowTotal(0)}/${n} × ${rowTotal(0)}/${n} = ${formatted(withReplacement0)}`);
+    addNumeric('multiplication', `With replacement, what is P(both selections are ${data.rows[1]})?`, withReplacement1, `P(${data.rows[1]}) × P(${data.rows[1]}) = ${rowTotal(1)}/${n} × ${rowTotal(1)}/${n} = ${formatted(withReplacement1)}`);
+
+    const withoutReplacement0 = (rowTotal(0) / n) * ((rowTotal(0) - 1) / (n - 1));
+    const withoutReplacement1 = (rowTotal(0) / n) * (rowTotal(1) / (n - 1));
+    addNumeric('multiplication', `Without replacement, what is P(first ${data.rows[0]} AND second ${data.rows[0]})?`, withoutReplacement0, `P(first ${data.rows[0]}) × P(second ${data.rows[0]} | first ${data.rows[0]}) = ${rowTotal(0)}/${n} × ${rowTotal(0) - 1}/${n - 1} = ${formatted(withoutReplacement0)}`);
+    addNumeric('multiplication', `Without replacement, what is P(first ${data.rows[0]} AND second ${data.rows[1]})?`, withoutReplacement1, `P(first ${data.rows[0]}) × P(second ${data.rows[1]} | first ${data.rows[0]}) = ${rowTotal(0)}/${n} × ${rowTotal(1)}/${n - 1} = ${formatted(withoutReplacement1)}`);
+
+    const product = (rowTotal(0) / n) * (colTotal(0) / n);
+    const joint = cell(0, 0) / n;
+    questions.push({
+      type: 'independence',
+      special: true,
+      prompt: `Are ${data.variable1} and ${data.variable2} independent? Check whether P(${data.rows[0]}) × P(${data.cols[0]}) equals P(${data.rows[0]} AND ${data.cols[0]}).`,
+      answer: rounded(Math.abs(rounded(product) - rounded(joint)) < 0.0001 ? 'Yes' : 'No'),
+      expected: rounded(product) === rounded(joint) ? 'Yes' : 'No',
+      product: rounded(product),
+      joint: rounded(joint),
+      solution: `P(${data.rows[0]}) × P(${data.cols[0]}) = ${formatted(product)}, while P(${data.rows[0]} AND ${data.cols[0]}) = ${formatted(joint)}. Therefore, the variables are ${rounded(product) === rounded(joint) ? 'independent' : 'not independent'}.`
+    });
+    questions[questions.length - 1].answer = questions[questions.length - 1].expected;
+    return questions;
+  }
+
+  function renderQuestionScreen() {
+    const question = STATE.questions[STATE.currentQuestion];
+    const number = STATE.currentQuestion + 1;
+    const totalQuestions = STATE.questions.length;
+    const answerWasCorrect = STATE.answersGiven[STATE.currentQuestion];
+    const feedback = STATE.submitted ? (answerWasCorrect
+      ? '<div class="feedback correct">Correct! ✓</div>'
+      : `<div class="feedback incorrect">Incorrect ✗<div class="solution"><strong>Worked solution:</strong> ${escapeHtml(question.solution)}</div></div>`)
+      : '';
+    const answerControl = question.special
+      ? '<label for="answer">Choose your answer</label><select id="answer"><option value="">Select Yes or No</option><option value="Yes">Yes</option><option value="No">No</option></select>'
+      : '<label for="answer">Enter a decimal rounded to 4 places or a fraction such as 34/100</label><input id="answer" type="text" inputmode="decimal" autocomplete="off">';
+    app.innerHTML = `<section class="card">
+      <div class="progress"><span>Question ${number} of ${totalQuestions}</span><div class="progress-bar"><div class="progress-fill" style="width: ${number / totalQuestions * 100}%"></div></div></div>
+      ${renderTable(STATE.tableData, true)}
+      <p class="context">${escapeHtml(STATE.tableData.context || '')}</p>
+      <div class="question">${escapeHtml(question.prompt)}</div>
+      ${question.special ? `<div class="notice">Computed check values: ${formatted(question.product)} and ${formatted(question.joint)}.</div>` : ''}
+      ${STATE.submitted ? '' : answerControl}
+      ${feedback}
+      <div class="actions">${STATE.submitted
+        ? (number < totalQuestions ? '<button type="button" class="primary" data-action="next-question">Next Question</button>' : '<button type="button" class="primary" data-action="show-results">View Results</button>')
+        : '<button type="button" class="primary" data-action="submit-answer">Submit Answer</button>'}</div>
+    </section>`;
+  }
+
+  function scoreClass(score, total) {
+    if (score === total) return 'perfect';
+    if (score > 0) return 'good';
+    return 'low';
+  }
+
+  function renderResults() {
+    const totalCorrect = STATE.answersGiven.filter(Boolean).length;
+    const typeTotals = {};
+    STATE.questions.forEach((question) => { typeTotals[question.type] = (typeTotals[question.type] || 0) + 1; });
+    const labels = { marginal: 'Marginal', conditional: 'Conditional', addition: 'Addition Rule', complement: 'Complement', multiplication: 'Multiplication', independence: 'Independence' };
+    const breakdown = Object.keys(typeTotals).map((type) => `<div class="score-item ${scoreClass(STATE.scores[type] || 0, typeTotals[type])}"><div>${labels[type]}</div><div>${STATE.scores[type] || 0} / ${typeTotals[type]}</div></div>`).join('');
+    app.innerHTML = `<section class="card"><h1>Results</h1><p class="lead">You completed all ${STATE.questions.length} questions.</p><div class="notice"><strong>Score: ${totalCorrect} / ${STATE.questions.length}</strong></div><h2>Score by question type</h2><div class="score-grid">${breakdown}</div><div class="actions"><button type="button" class="primary" data-action="try-again">Try Again</button><button type="button" class="secondary" data-action="new-scenario">New Scenario</button></div></section>`;
+  }
+
+  function disableNumberWheel() {
+    document.querySelectorAll('input[type="number"]').forEach((input) => {
+      input.addEventListener('wheel', (event) => event.preventDefault(), { passive: false });
+    });
+  }
+
+  function render() {
+    if (STATE.tableData === null) renderStart();
+    else if (STATE.currentQuestion < STATE.questions.length) renderQuestionScreen();
+    else renderResults();
+    disableNumberWheel();
+  }
+
+  app.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target.closest('[data-action]') : null;
+    if (!target || !app.contains(target)) return;
+    const action = target.dataset.action;
+    if (action === 'choose-mode') {
+      STATE.mode = target.dataset.mode === 'null' ? null : target.dataset.mode;
+      STATE.builderError = '';
+      render();
+    } else if (action === 'select-scenario') {
+      STATE.selectedScenario = Number(target.dataset.index);
+      STATE.mode = 'scenario';
+      render();
+    } else if (action === 'start-scenario') {
+      const scenario = SCENARIOS[STATE.selectedScenario];
+      STATE.tableData = calculateTable(scenario.variable1, scenario.variable2, scenario.rows, scenario.cols, scenario.cells, scenario.context);
+      STATE.questions = buildQuestions(STATE.tableData);
+      STATE.currentQuestion = 0;
+      STATE.answersGiven = [];
+      STATE.scores = {};
+      STATE.submitted = false;
+      render();
+    } else if (action === 'update-table') {
+      const rowCount = Number(getValue('row-count'));
+      const colCount = Number(getValue('col-count'));
+      if (Number.isInteger(rowCount) && rowCount >= 2 && rowCount <= 8 && Number.isInteger(colCount) && colCount >= 2 && colCount <= 8) {
+        STATE.builderDimensions = { rows: rowCount, cols: colCount };
+        STATE.builderError = '';
+      } else {
+        STATE.builderError = 'Choose between 2 and 8 row categories and between 2 and 8 column categories.';
+      }
+      render();
+    } else if (action === 'build-start') {
+      const result = readBuilder();
+      if (result.error) {
+        STATE.builderError = result.error;
+        render();
+      } else {
+        STATE.tableData = result.data;
+        STATE.questions = buildQuestions(STATE.tableData);
+        STATE.currentQuestion = 0;
+        STATE.answersGiven = [];
+        STATE.scores = {};
+        STATE.submitted = false;
+        STATE.builderError = '';
+        render();
+      }
+    } else if (action === 'submit-answer') {
+      const question = STATE.questions[STATE.currentQuestion];
+      const raw = getValue('answer');
+      const parsed = question.special ? raw : parseProbability(raw);
+      const correct = question.special ? parsed === question.answer : Number.isFinite(parsed) && Math.abs(rounded(parsed) - rounded(question.answer)) < 0.0001;
+      STATE.answersGiven[STATE.currentQuestion] = correct;
+      STATE.scores[question.type] = (STATE.scores[question.type] || 0) + (correct ? 1 : 0);
+      STATE.submitted = true;
+      render();
+    } else if (action === 'next-question') {
+      STATE.currentQuestion += 1;
+      STATE.submitted = false;
+      render();
+    } else if (action === 'show-results') {
+      STATE.currentQuestion = STATE.questions.length;
+      render();
+    } else if (action === 'try-again') {
+      if (STATE.tableData) {
+        STATE.questions = buildQuestions(STATE.tableData);
+        STATE.currentQuestion = 0;
+        STATE.answersGiven = [];
+        STATE.scores = {};
+        STATE.submitted = false;
+        render();
+      }
+    } else if (action === 'new-scenario') {
+      resetState();
+      render();
+    }
+  });
+
+  render();
+});
+</script>
+</body>
+</html>
